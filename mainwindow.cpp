@@ -13,6 +13,11 @@
 #include <QColor>
 #include <QTextCharFormat>
 #include <QColorDialog>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QFile>
+#include <QTextStream>
+#include <QAction>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -37,26 +42,42 @@ void MainWindow::set_MenuBar(){
     // 往菜单中添加活动项
     m_file->addAction(QIcon(":/res/open.png"), "打开");
     m_file->addAction(QIcon(":/res/new.png"), "新建");
-    m_file->addAction(QIcon(":/res/save.png"), "保存");
+    // 保存
+    QAction* save = m_file->addAction(QIcon(":/res/save.png"), "保存");
+    QObject::connect(save, &QAction::triggered, this, &MainWindow::slot_savefile);
     m_file->addAction(QIcon(":/res/quit.png"), "退出");
 
     QMenu* m_edit = m_bar->addMenu("编辑");
-    m_edit->addAction(QIcon(":/res/quash.png"), "撤销");
-    m_edit->addAction(QIcon(":/res/r_quash.png"), "反撤销");
-    m_edit->addAction(QIcon(":/res/copy.png"), "复制");
+    // 撤销
+    QAction* undo = m_edit->addAction(QIcon(":/res/quash.png"), "撤销");
+    QObject::connect(undo, &QAction::triggered, [=](){
+        textedit->setUndoRedoEnabled(1);
+        textedit->undo();
+    });
+    // 反撤销
+    QAction* redo = m_edit->addAction(QIcon(":/res/r_quash.png"), "反撤销");
+    QObject::connect(redo, &QAction::triggered, [=](){
+        textedit->setUndoRedoEnabled(1);
+        textedit->redo();
+    });
+    // 复制
+    QAction* copy = m_edit->addAction(QIcon(":/res/copy.png"), "复制");
+    QObject::connect(copy, &QAction::triggered, [=](){
+        textedit->copy();
+    });
+    // 剪切
     m_edit->addAction(QIcon(":/res/shear.png"), "剪切");
     m_edit->addAction(QIcon(":/res/stickup.png"), "粘贴");
 }
 
 void MainWindow::set_ToolBar(){
-
+    // 创建工具栏
     t_bar = ui->mainToolBar;
     set_font();
     set_fontsize();
     set_fontblod();
     set_fontitalic();
     set_fontcolor();
-
 }
 
 void MainWindow::set_central(){
@@ -91,6 +112,7 @@ void MainWindow::set_font(){
         this->textedit->setFont(font);
     });
 }
+
 // 字体大小
 void MainWindow::set_fontsize(){
     QLabel* bel = new QLabel("字号",t_bar);
@@ -115,6 +137,7 @@ void MainWindow::set_fontblod(){
         this->textedit->setFontWeight(textedit->fontWeight() == QFont::Normal ? QFont::Bold : QFont::Normal);
     });
 }
+
 // 斜体
 void MainWindow::set_fontitalic(){
     QPushButton* btn = new QPushButton(QIcon(), "斜体", t_bar);
@@ -124,6 +147,7 @@ void MainWindow::set_fontitalic(){
     });
 }
 
+// 颜色
 void MainWindow::set_fontcolor(){
     QPushButton* bnt = new QPushButton(QIcon(), "颜色", this);
     t_bar->addWidget(bnt);
@@ -133,4 +157,19 @@ void MainWindow::set_fontcolor(){
         format.setForeground(QBrush(color));
         textedit->mergeCurrentCharFormat(format);
     });
+}
+
+// 保存文件
+void MainWindow::slot_savefile(){
+    if (QMessageBox::question(this, "WARN", "是否保存") == QMessageBox::No) return;
+    // 获取创建文件的路径以及名字
+    QString filename = QFileDialog::getSaveFileName();
+    // 创建文件
+    QFile* file = new QFile(filename);
+    // 以读写方式打开文件
+    if (!file->open(QIODevice::ReadWrite)) return;
+    QTextStream stream(file);
+    QString str = textedit->toPlainText();
+    stream << str;
+    file->close();
 }

@@ -28,6 +28,8 @@ public:
     void set_fontitalic();
     void set_fontcolor();
 
+    void slot_savefile();
+
 private:
     Ui::MainWindow *ui;
     QTextEdit* textedit;
