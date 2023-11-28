@@ -15,7 +15,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
     void set_central();
@@ -29,6 +29,8 @@ public:
     void set_fontcolor();
 
     void slot_savefile();
+    void slot_createfile();
+    void slot_openfile();
 
 private:
     Ui::MainWindow *ui;

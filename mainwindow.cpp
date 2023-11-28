@@ -23,10 +23,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     this->resize(1200, 800);
+    this->setWindowIcon(QIcon(":/res/text.png"));
+    this->setWindowTitle("无标题文档");
+
     set_MenuBar();
     set_ToolBar();
     set_central();
     set_statusBar();
+
+    QObject::connect(textedit, &QTextEdit::textChanged, [this](){
+        if (!this->windowTitle().startsWith("*")){
+            if (this->textedit->toPlainText() != ""){
+                this->setWindowTitle("*" + this->windowTitle());
+            }
+        }
+    });
 }
 
 MainWindow::~MainWindow()
@@ -40,11 +51,16 @@ void MainWindow::set_MenuBar(){
     // 往菜单栏中添加菜单
     QMenu* m_file = m_bar->addMenu("文件");
     // 往菜单中添加活动项
-    m_file->addAction(QIcon(":/res/open.png"), "打开");
-    m_file->addAction(QIcon(":/res/new.png"), "新建");
+    QAction* open = m_file->addAction(QIcon(":/res/open.png"), "打开");
+    QObject::connect(open, &QAction::triggered, this, &MainWindow::slot_openfile);
+
+    // 新建
+    QAction* create = m_file->addAction(QIcon(":/res/new.png"), "新建");
+    QObject::connect(create, &QAction::triggered, this, &MainWindow::slot_createfile);
     // 保存
     QAction* save = m_file->addAction(QIcon(":/res/save.png"), "保存");
     QObject::connect(save, &QAction::triggered, this, &MainWindow::slot_savefile);
+
     m_file->addAction(QIcon(":/res/quit.png"), "退出");
 
     QMenu* m_edit = m_bar->addMenu("编辑");
@@ -94,7 +110,7 @@ void MainWindow::set_statusBar(){
     QTimer* timer = new QTimer(this);
     QObject::connect(timer, &QTimer::timeout, [=](){
         QString str = QDateTime::currentDateTime().toString();
-        bel->setText("时间："+str);
+        bel->setText("时间：" + str);
     });
     timer->start(1000);
 }
@@ -161,9 +177,18 @@ void MainWindow::set_fontcolor(){
 
 // 保存文件
 void MainWindow::slot_savefile(){
+    if (textedit->toPlainText() == "") return;
     if (QMessageBox::question(this, "WARN", "是否保存") == QMessageBox::No) return;
     // 获取创建文件的路径以及名字
-    QString filename = QFileDialog::getSaveFileName();
+    QString filename ;
+
+    if (this->windowTitle() == "无标题文档"){
+        filename = QFileDialog::getSaveFileName();
+    }else {
+        QStringList strList = this->windowTitle().split("*");
+        filename = strList.at(1);
+    }
+
     // 创建文件
     QFile* file = new QFile(filename);
     // 以读写方式打开文件
@@ -172,4 +197,26 @@ void MainWindow::slot_savefile(){
     QString str = textedit->toPlainText();
     stream << str;
     file->close();
+
+    this->setWindowTitle(filename);
+}
+
+void MainWindow::slot_createfile(){
+    if (this->windowTitle().startsWith("*")){
+        this->slot_savefile();
+    }
+    this->setWindowTitle("无标题文档");
+    textedit->clear();
+}
+
+void MainWindow::slot_openfile(){
+    if (this->windowTitle().startsWith("*")) this->slot_savefile();
+    QString FileName = QFileDialog::getOpenFileName();
+    QFile f(FileName);
+    if (f.open(QIODevice::ReadWrite)){
+        QTextStream stream(&f);
+        QString str = stream.readAll();
+        textedit->setText(str);
+        this->setWindowTitle(FileName);
+    }
 }
