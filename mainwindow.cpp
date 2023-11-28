@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
     this->resize(1200, 800);
-    this->setWindowIcon(QIcon(":/res/text.png"));
+    this->setWindowIcon(QIcon(":/res/edit.png"));
     this->setWindowTitle("无标题文档");
 
     set_MenuBar();
@@ -61,17 +61,21 @@ void MainWindow::set_MenuBar(){
     QAction* save = m_file->addAction(QIcon(":/res/save.png"), "保存");
     QObject::connect(save, &QAction::triggered, this, &MainWindow::slot_savefile);
 
-    m_file->addAction(QIcon(":/res/quit.png"), "退出");
+    // 退出
+    QAction* quit = m_file->addAction(QIcon(":/res/quit.png"), "退出");
+    QObject::connect(quit, &QAction::triggered, [=](){
+        exit(1);
+    });
 
     QMenu* m_edit = m_bar->addMenu("编辑");
     // 撤销
-    QAction* undo = m_edit->addAction(QIcon(":/res/quash.png"), "撤销");
+    QAction* undo = m_edit->addAction(QIcon(":/res/undo.png"), "撤销");
     QObject::connect(undo, &QAction::triggered, [=](){
         textedit->setUndoRedoEnabled(1);
         textedit->undo();
     });
     // 反撤销
-    QAction* redo = m_edit->addAction(QIcon(":/res/r_quash.png"), "反撤销");
+    QAction* redo = m_edit->addAction(QIcon(":/res/redo.png"), "反撤销");
     QObject::connect(redo, &QAction::triggered, [=](){
         textedit->setUndoRedoEnabled(1);
         textedit->redo();
@@ -82,8 +86,15 @@ void MainWindow::set_MenuBar(){
         textedit->copy();
     });
     // 剪切
-    m_edit->addAction(QIcon(":/res/shear.png"), "剪切");
-    m_edit->addAction(QIcon(":/res/stickup.png"), "粘贴");
+    QAction* cut = m_edit->addAction(QIcon(":/res/cut.png"), "剪切");
+    QObject::connect(cut, &QAction::triggered, [=](){
+        textedit->cut();
+    });
+    // 粘贴
+    QAction* stick = m_edit->addAction(QIcon(":/res/paste.png"), "粘贴");
+    QObject::connect(stick, &QAction::triggered, [=](){
+        textedit->paste();
+    });
 }
 
 void MainWindow::set_ToolBar(){
@@ -147,7 +158,7 @@ void MainWindow::set_fontsize(){
 
 // 字体加粗
 void MainWindow::set_fontblod(){
-    QPushButton* btn = new QPushButton(QIcon(), "加粗", t_bar);
+    QPushButton* btn = new QPushButton(QIcon(":/res/B.png"), "加粗", t_bar);
     t_bar->addWidget(btn);
     QObject::connect(btn, &QPushButton::clicked, this, [this](){
         this->textedit->setFontWeight(textedit->fontWeight() == QFont::Normal ? QFont::Bold : QFont::Normal);
@@ -156,7 +167,7 @@ void MainWindow::set_fontblod(){
 
 // 斜体
 void MainWindow::set_fontitalic(){
-    QPushButton* btn = new QPushButton(QIcon(), "斜体", t_bar);
+    QPushButton* btn = new QPushButton(QIcon(":/res/I.png"), "斜体", t_bar);
     t_bar->addWidget(btn);
     QObject::connect(btn, &QPushButton::clicked, this, [this](){
         this->textedit->setFontItalic(textedit->fontItalic() == true ? false : true);
@@ -165,7 +176,7 @@ void MainWindow::set_fontitalic(){
 
 // 颜色
 void MainWindow::set_fontcolor(){
-    QPushButton* bnt = new QPushButton(QIcon(), "颜色", this);
+    QPushButton* bnt = new QPushButton(QIcon(":/res/color.png"), "颜色", this);
     t_bar->addWidget(bnt);
     QObject::connect(bnt, &QPushButton::clicked, this, [this](){
         QColor color = QColorDialog::getColor();
